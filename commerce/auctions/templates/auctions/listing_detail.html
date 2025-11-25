@@ -1,0 +1,14 @@
+
+{% extends "auctions/layout.html" %}
+{% block body %}
+<div class="container mt-4">
+    <h2>{{ listing.title }}</h2>
+    {% if listing.image %}
+        {{ listing.image.url }}
+    {% endif %}
+    <p>{{ listing.description }}</p>
+    <p><strong>Current Price:</strong> ${{ listing.current_price }}</p>
+    <p><strong>Category:</strong> {{ listing.category }}</p>
+    <p><strong>Created At:</strong> {{ listing.created_at }}</p>
+</div>
+{% endblock %}
