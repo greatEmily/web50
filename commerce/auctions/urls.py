@@ -10,4 +10,6 @@ urlpatterns = [
     path("register", views.register, name="register"),
     path("create", views.create_listing, name="create_listing"),
     path('listing/<int:listing_id>/', views.listing_detail, name='listing_detail'),
+    path('watchlist', views.watchlist_view, name='watchlist'),
+    path('listing/<int:listing_id>/watchlist/', views.toggle_watchlist, name='toggle_watchlist'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

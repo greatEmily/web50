@@ -3,12 +3,42 @@
 {% block body %}
 <div class="container mt-4">
     <h2>{{ listing.title }}</h2>
-    {% if listing.image %}
-        {{ listing.image.url }}
-    {% endif %}
+    <img src="{{ listing.image.url|default:'https://via.placeholder.com/300x200?text=No+Image' }}" alt="{{ listing.title }}">
     <p>{{ listing.description }}</p>
     <p><strong>Current Price:</strong> ${{ listing.current_price }}</p>
     <p><strong>Category:</strong> {{ listing.category }}</p>
     <p><strong>Created At:</strong> {{ listing.created_at }}</p>
+    <p><strong>Status:</strong> {{ listing.is_active|yesno:"Active,Closed" }}</p>
+    
+    <!-- Create Bid -->
+    {% if user.is_authenticated and listing.active %}
+        <h4>Place a Bid</h4>
+        <form method="post">
+            {% csrf_token %}
+            {{ bid_form.as_p }}
+            <button type="submit" class="btn btn-success">Submit Bid</button>
+        </form>
+    {% endif %}
+    
+    <!-- Current Bid -->
+    <p><strong>Current Price:</strong> ${{ listing.current_price }}</p>
+    {% if listing.bids.count > 0 %}
+        <p><strong>Highest Bid:</strong> ${{ listing.bids.latest.amount }}</p>
+    {% endif %}
+
+    {% if user.is_authenticated %}
+        {% if user in listing.watchers.all %}
+            <!-- Remove from Watchlist -->
+            <a href="{% url 'toggle_watchlist' listing.id %}" class="btn btn-warning">
+                Remove from Watchlist
+            </a>
+        {% else %}
+            <!-- Add to Watchlist -->
+            <a href="{% url 'toggle_watchlist' listing.id %}" class="btn btn-primary">
+                Add to Watchlist
+            </a>
+        {% endif %}
+    {% endif %}
+
 </div>
 {% endblock %}

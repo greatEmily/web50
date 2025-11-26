@@ -7,12 +7,12 @@
         
     {% for listing in listings %}
         <div class="col-md-4 mb-4">
-            <div class="card h-100 shadow-sm">
-                {% if listing.image %}
-                    {{ listing.image.url }}
-                {% else %}
-                    https://via.placeholder.com/300x200?text=No+Image
-                {% endif %}
+            <div class="card h-100 shadow-sm"> 
+        {% if listing.image %}
+            <img src="{{ listing.image.url }}" alt="{{ listing.title }}" class="card-img-top" style="height:200px; object-fit:cover;">
+        {% else %}
+            <img src="https://via.placeholder.com/300x200?text=No+Image" alt="No Image" class="card-img-top" style="height:200px; object-fit:cover;">
+        {% endif %}
                 <div class="card-body">
                         <h5 class="card-title">{{ listing.title }}</h5>
                         <p class="card-text">{{ listing.description|truncatewords:20 }}</p>
