@@ -3,42 +3,54 @@
 {% block body %}
 <div class="container mt-4">
     <h2>{{ listing.title }}</h2>
-    <img src="{{ listing.image.url|default:'https://via.placeholder.com/300x200?text=No+Image' }}" alt="{{ listing.title }}">
-    <p>{{ listing.description }}</p>
+        <img src="{{ listing.image.url|default:'https://via.placeholder.com/300x200?text=No+Image' }}" alt="{{ listing.title }}">
     <p><strong>Current Price:</strong> ${{ listing.current_price }}</p>
     <p><strong>Category:</strong> {{ listing.category }}</p>
     <p><strong>Created At:</strong> {{ listing.created_at }}</p>
     <p><strong>Status:</strong> {{ listing.is_active|yesno:"Active,Closed" }}</p>
-    
-    <!-- Create Bid -->
-    {% if user.is_authenticated and listing.active %}
+
+    <!-- Highest Bid -->
+    {% if highest_bid %}
+        <p><strong>Highest Bid:</strong> ${{ highest_bid.amount }}</p>
+    {% endif %}
+
+    <!-- Watchlist Feedback Messages -->
+    {% if messages %}
+        {% for message in messages %}
+            {% if "watchlist-remove" in message.tags %}
+                <p class="alert alert-danger mt-2">{{ message }}</p> <!-- Red -->
+            {% elif "watchlist-add" in message.tags %}
+                <p class="alert alert-success mt-2">{{ message }}</p> <!-- Green -->
+            {% else %}
+                <p class="alert alert-info mt-2">{{ message }}</p>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
+    <!-- Bid Form -->
+    {% if user.is_authenticated and listing.is_active %}
         <h4>Place a Bid</h4>
         <form method="post">
             {% csrf_token %}
             {{ bid_form.as_p }}
             <button type="submit" class="btn btn-success">Submit Bid</button>
         </form>
-    {% endif %}
-    
-    <!-- Current Bid -->
-    <p><strong>Current Price:</strong> ${{ listing.current_price }}</p>
-    {% if listing.bids.count > 0 %}
-        <p><strong>Highest Bid:</strong> ${{ listing.bids.latest.amount }}</p>
+    {% else %}
+        <p>You must be logged in to place a bid.</p>
     {% endif %}
 
+    <!-- Watchlist Buttons -->
     {% if user.is_authenticated %}
         {% if user in listing.watchers.all %}
-            <!-- Remove from Watchlist -->
-            <a href="{% url 'toggle_watchlist' listing.id %}" class="btn btn-warning">
+            <a href="{% url 'toggle_watchlist' listing.id %}" class="btn btn-warning mt-2">
                 Remove from Watchlist
             </a>
         {% else %}
-            <!-- Add to Watchlist -->
-            <a href="{% url 'toggle_watchlist' listing.id %}" class="btn btn-primary">
+            <a href="
+            {% url 'toggle_watchlist' listing.id %}" class="btn btn-primary mt-2">
                 Add to Watchlist
             </a>
         {% endif %}
     {% endif %}
-
 </div>
 {% endblock %}

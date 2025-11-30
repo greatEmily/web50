@@ -81,27 +81,26 @@ def create_listing(request):
         form = AuctionListingForm()
     return render(request, 'auctions/create_listing.html', {'form': form})
 
+
 @login_required
 def listing_detail(request, listing_id):
     listing = get_object_or_404(AuctionListing, pk=listing_id)
     bid_form = BidForm()
+    highest_bid = listing.bids.order_by('-amount').first()  # Get highest bid if exists
 
     if request.method == "POST":
         bid_form = BidForm(request.POST)
         if bid_form.is_valid():
             amount = bid_form.cleaned_data['amount']
 
-            # Get highest bid if exists
-            highest_bid = listing.bids.order_by('-amount').first()
-
-            # Validation
+            # ✅ Validation Rules
             if amount < listing.starting_bid:
-                messages.error(request, "Bid must be at least the starting bid.")
+                messages.error(request, f"Bid must be at least the starting bid of ${listing.starting_bid}.")
             elif highest_bid and amount <= highest_bid.amount:
-                messages.error(request, "Bid must be higher than the current highest bid.")
+                messages.error(request, f"Bid must be higher than the current highest bid of ${highest_bid.amount}.")
             else:
-                # Save bid
-                Bid.objects.create(listing=listing, user=request.user, amount=amount)
+                # ✅ Save valid bid
+                Bid.objects.create(listing=listing, bidder=request.user, amount=amount)
                 listing.current_price = amount
                 listing.save()
                 messages.success(request, "Your bid was placed successfully!")
@@ -109,8 +108,11 @@ def listing_detail(request, listing_id):
 
     return render(request, 'auctions/listing_detail.html', {
         'listing': listing,
-        'bid_form': bid_form
+        'bid_form': bid_form,
+        'highest_bid': highest_bid
     })
+
+
 
 
 @login_required
@@ -118,11 +120,12 @@ def toggle_watchlist(request, listing_id):
     listing = get_object_or_404(AuctionListing, pk=listing_id)
     if request.user in listing.watchers.all():
         listing.watchers.remove(request.user)
-        messages.success(request, "Removed from your Watchlist.")
+        messages.add_message(request, messages.INFO, "Removed from your Watchlist.", extra_tags="watchlist-remove")
     else:
         listing.watchers.add(request.user)
-        messages.success(request, "Added to your Watchlist.")
+        messages.add_message(request, messages.SUCCESS, "Added to your Watchlist.", extra_tags="watchlist-add")
     return redirect('listing_detail', listing_id=listing.id)
+
 
 
 @login_required
