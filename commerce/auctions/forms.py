@@ -1,6 +1,6 @@
 
 from django import forms
-from .models import AuctionListing
+from .models import AuctionListing, Comment
 
 
 class AuctionListingForm(forms.ModelForm):
@@ -17,3 +17,17 @@ class AuctionListingForm(forms.ModelForm):
 
 class BidForm(forms.Form):
     amount = forms.DecimalField(max_digits=10, decimal_places=2, label="Your Bid")
+
+
+class CommentForm(forms.ModelForm):
+    content = forms.CharField(
+        label="Add a comment",
+        widget=forms.Textarea(attrs={
+            "rows": 1,
+            "placeholder": "Share your thoughts about this listing..."
+        })
+    )
+
+    class Meta:
+        model = Comment
+        fields = ["content"]

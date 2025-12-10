@@ -12,4 +12,6 @@ urlpatterns = [
     path('listing/<int:listing_id>/', views.listing_detail, name='listing_detail'),
     path('watchlist', views.watchlist_view, name='watchlist'),
     path('listing/<int:listing_id>/watchlist/', views.toggle_watchlist, name='toggle_watchlist'),
+    path('listing/<int:listing_id>/close/', views.close_listing, name='close_listing'),
+    path('my_listings/', views.my_listings, name='my_listings'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

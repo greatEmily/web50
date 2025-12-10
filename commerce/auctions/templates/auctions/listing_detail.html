@@ -4,20 +4,39 @@
 <div class="container mt-4">
     <h2>{{ listing.title }}</h2>
 
-        <!-- Watchlist Feedback Messages -->
+    <!-- Feedback Messages -->
     {% if messages %}
         {% for message in messages %}
-            {% if "watchlist-remove" in message.tags %}
-                <p class="alert alert-danger mt-2">{{ message }}</p> <!-- Red -->
-            {% elif "watchlist-add" in message.tags %}
-                <p class="alert alert-success mt-2">{{ message }}</p> <!-- Green -->
-            {% else %}
-                <p class="alert alert-info mt-2">{{ message }}</p>
-            {% endif %}
+            <p class="alert alert-info mt-2">{{ message }}</p>
         {% endfor %}
     {% endif %}
 
-        <img src="{{ listing.image.url }}" class="img-fluid" alt="{{ listing.title }}" style="width:300px; height:200px; object-fit:cover;">
+  {% if is_closed %}
+    {% if user_is_winner %}
+      <div class="alert alert-success" role="status">
+        🎉 <strong>Congratulations!</strong> You won this auction
+        {% if listing.current_price %}
+          at <strong>${{ listing.current_price|floatformat:2 }}</strong>
+        {% endif %}.
+      </div>
+    {% else %}
+      <div class="alert alert-secondary" role="status">
+        This auction is closed.
+        {% if listing.winner %}
+          Winner: <strong>{{ listing.winner.username }}</strong>
+          {% if listing.current_price %}
+            at <strong>${{ listing.current_price|floatformat:2 }}</strong>.
+          {% endif %}
+        {% else %}
+          No bids were placed; there is no winner.
+        {% endif %}
+      </div>
+    {% endif %}
+  {% endif %}
+
+
+
+    <img src="{{ listing.image.url }}" class="img-fluid" alt="{{ listing.title }}" style="width:300px; height:200px; object-fit:cover;">
     <p><strong>Current Price:</strong> ${{ listing.current_price }}</p>
     <p><strong>Category:</strong> {{ listing.category }}</p>
     <p><strong>Created At:</strong> {{ listing.created_at }}</p>
@@ -25,22 +44,39 @@
 
     <!-- Highest Bid -->
     {% if highest_bid %}
-        <p><strong>Highest Bid:</strong> ${{ highest_bid.amount }}</p>
+        <p><strong>Highest Bid:</strong> ${{ highest_bid.amount }} (by {{ highest_bid.bidder }})</p>
+    {% else %}
+        <p><strong>No bids yet.</strong></p>
     {% endif %}
 
+    <!-- Close Auction Button (Owner Only) -->
+    {% if user.is_authenticated and user == listing.owner and listing.active %}
+        {% url 'close_listing' listing.id as close_url %} 
+        <form method="post" action="{% url 'close_listing' listing.id %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger mt-3">Close Auction</button>
+        </form>
+    {% endif %}
+
+
+    <!-- Bid Form -->
     {% if user.is_authenticated %}
         {% if listing.active %}
-            <!-- Show bid form -->
+            <h4 class="mt-4">Place a Bid</h4>
+            <form method="post">
+                {% csrf_token %}
+                {{ bid_form.as_p }}
+                <button type="submit" class="btn btn-success">Submit Bid</button>
+            </form>
         {% else %}
-            <p>This listing is closed. Bidding is disabled.</p>
+            <p class="text-muted mt-4">This listing is closed. Bidding is disabled.</p>
         {% endif %}
     {% else %}
-        <p>You must be logged in to place a bid.</p>
+        <p class="mt-4">You must be logged in to place a bid.</p>
     {% endif %}
 
-
     <!-- Watchlist Buttons -->
-    {% if user.is_authenticated %}
+    {% if user.is_authenticated and listing.active %}
         {% if user in listing.watchers.all %}
             <a href="{% url 'toggle_watchlist' listing.id %}" class="btn btn-warning mt-2">
                 Remove from Watchlist
@@ -52,5 +88,44 @@
             </a>
         {% endif %}
     {% endif %}
+
+    
+  <!-- Comments Section -->
+  <h4 class="mt-3">Comments</h4>
+
+  {% if comments %}
+      <ul class="list-group mb-3">
+          {% for c in comments %}
+              <li class="list-group-item">
+                  <div class="d-flex justify-content-between">
+                      <strong>@{{ c.commenter.username }}</strong>
+                      <small class="text-muted">{{ c.timestamp|date:"M d, Y H:i" }}</small>
+                  </div>
+                  <p class="mb-0 mt-1">{{ c.content|linebreaksbr }}</p>
+              </li>
+          {% endfor %}
+      </ul>
+  {% else %}
+      <p class="text-muted">No comments yet. Be the first to comment!</p>
+  {% endif %}
+
+  {% if user.is_authenticated %}
+    <form method="post" class="mt-2">
+        {% csrf_token %}
+        <div class="mb-3">
+            {{ comment_form.content.label_tag }}
+            {{ comment_form.content }}
+            {% if comment_form.content.errors %}
+                <div class="text-danger">{{ comment_form.content.errors }}</div>
+            {% endif %}
+        </div>
+        <button type="submit" name="comment_submit" class="btn btn-outline-primary">
+            Post Comment
+        </button>
+    </form>
+  {% else %}
+      <p class="mt-2">You must be logged in to post a comment.</p>
+  {% endif %}
+
 </div>
 {% endblock %}

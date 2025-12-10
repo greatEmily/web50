@@ -1,0 +1,36 @@
+
+{% extends "auctions/layout.html" %}
+{% block body %}
+<div class="container mt-4">
+    <h2>My Listings</h2>
+
+    {% if listings %}
+        <table class="table table-striped mt-3">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Status</th>
+                    <th>Current Price</th>
+                    <th>Created At</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for listing in listings %}
+                <tr>
+                    <td>{{ listing.title }}</td>
+                    <td>{{ listing.active|yesno:"Active,Closed" }}</td>
+                    <td>${{ listing.current_price }}</td>
+                    <td>{{ listing.created_at }}</td>
+                    <td>
+                        <a href="{% url 'listing_detail' listing.id %}" class="btn btn-primary btn-sm">View Listing</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>You have not created any listings yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

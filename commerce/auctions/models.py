@@ -1,5 +1,7 @@
 from django.contrib.auth.models import AbstractUser, User
-from django.db import models
+from django.db import models, transaction
+from django.conf import settings
+from django.utils import timezone
 
 
 class User(AbstractUser):
@@ -31,8 +33,49 @@ class AuctionListing(models.Model):
     watchers = models.ManyToManyField(User, related_name='watchlist', blank=True)
     owner = models.ForeignKey('User', on_delete=models.CASCADE, related_name='listings')
 
+    
+    # Auction outcome / audit
+    winner = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='won_auctions'
+    )
+    closed_at = models.DateTimeField(null=True, blank=True)
+    closed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='closed_listings'
+    )
+
+
+
     def __str__(self):
         return self.title
+    
+    
+    @transaction.atomic
+    def close(self, by_user):
+        """
+        Close the auction: mark inactive, set winner if highest bid exists,
+        freeze the current_price, and record audit fields atomically.
+        """
+        if not self.active:
+            return False  # already closed
+
+        # Determine highest bid (if any)
+        highest_bid = self.bids.order_by('-amount', 'timestamp').first()
+
+        # Persist state
+        self.active = False
+        self.closed_at = timezone.now()
+        self.closed_by = by_user
+
+        if highest_bid:
+            self.winner = highest_bid.bidder
+            self.current_price = highest_bid.amount
+
+        self.save(update_fields=[
+            'active', 'closed_at', 'closed_by', 'winner', 'current_price'
+        ])
+
 
 
 class Bid(models.Model):
