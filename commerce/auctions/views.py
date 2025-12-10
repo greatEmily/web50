@@ -9,7 +9,7 @@ from django.contrib import messages
 
 from .models import User, AuctionListing, Bid
 
-
+@login_required(login_url='login')
 def index(request):
     listings = AuctionListing.objects.filter(active=True).order_by('-created_at')
     return render(request, "auctions/index.html", {'listings': listings})
@@ -74,6 +74,7 @@ def create_listing(request):
         if form.is_valid():
             listing = form.save(commit=False)
             listing.owner = request.user
+            listing.active = True
             listing.current_price = listing.starting_bid
             listing.save()
             return redirect('index')
@@ -82,29 +83,39 @@ def create_listing(request):
     return render(request, 'auctions/create_listing.html', {'form': form})
 
 
+
 @login_required
 def listing_detail(request, listing_id):
     listing = get_object_or_404(AuctionListing, pk=listing_id)
     bid_form = BidForm()
-    highest_bid = listing.bids.order_by('-amount').first()  # Get highest bid if exists
+    highest_bid = listing.bids.order_by('-amount').first()
 
     if request.method == "POST":
+        # Prevent bidding on closed listings
+        if not listing.active:  # or listing.is_active if that's your field
+            messages.error(request, "This listing is closed. You cannot place a bid.")
+            return redirect('listing_detail', listing_id=listing.id)
+
         bid_form = BidForm(request.POST)
         if bid_form.is_valid():
             amount = bid_form.cleaned_data['amount']
 
-            # ✅ Validation Rules
             if amount < listing.starting_bid:
                 messages.error(request, f"Bid must be at least the starting bid of ${listing.starting_bid}.")
             elif highest_bid and amount <= highest_bid.amount:
                 messages.error(request, f"Bid must be higher than the current highest bid of ${highest_bid.amount}.")
             else:
-                # ✅ Save valid bid
                 Bid.objects.create(listing=listing, bidder=request.user, amount=amount)
                 listing.current_price = amount
                 listing.save()
                 messages.success(request, "Your bid was placed successfully!")
                 return redirect('listing_detail', listing_id=listing.id)
+
+    return render(request, 'auctions/listing_detail.html', {
+        'listing': listing,
+        'bid_form': bid_form,
+        'highest_bid': highest_bid
+    })
 
     return render(request, 'auctions/listing_detail.html', {
         'listing': listing,

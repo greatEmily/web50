@@ -19,7 +19,12 @@ class AuctionListing(models.Model):
     description = models.TextField()
     starting_bid = models.DecimalField(max_digits=10, decimal_places=2)
     current_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    image = models.ImageField(upload_to='listing_images/', blank=True, null=True)    
+    image = models.ImageField(
+        upload_to='listing_images/',
+        blank=True,
+        null=True,
+        default='listing_images/default.jpg'  # <-- ensure this file exists under MEDIA_ROOT
+    )   
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     active = models.BooleanField(default=True)
