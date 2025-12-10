@@ -17,14 +17,26 @@
             {% endif %}
         </div>
         <ul class="nav">
+            {% if user.is_authenticated %}
             <li class="nav-item">
                 <a class="nav-link" href="{% url 'index' %}">Active Listings</a>
             </li>
+            {% endif %}
+            {% if user.is_authenticated %}
             <li class="nav-item">
                 <a class="nav-link" href="{% url 'my_listings' %}">All My Listings</a>
             </li>
+            {% endif %}
+            {% if user.is_authenticated %}
+            <li class="nav-item">
                 <a class="nav-link" href="{% url 'create_listing' %}">Create a Listing</a>
             </li>
+            {% endif %}
+            {% if user.is_authenticated %}
+             <li class="nav-item">
+                <a class="nav-link" href="{% url 'category_list' %}">Categories</a>
+            </li>
+            {% endif %}
         {% if user.is_authenticated %}
             <li class="nav-item">
                 <a class="nav-link" href="{% url 'watchlist' %}">Watchlist</a>

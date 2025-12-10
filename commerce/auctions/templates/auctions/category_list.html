@@ -1,0 +1,17 @@
+
+{% extends "auctions/layout.html" %}
+{% block body %}
+<div class="container mt-4">
+
+<h2>Categories</h2>
+<ul>
+  {% for cat in categories %}
+    <li><a href="{% url 'category_detail' cat %}">{{ cat }}</a></li>
+
+    {% empty %}
+        <p>No categories available.</p>
+    {% endfor %}
+</ul>
+</div>
+{% endblock %}
+

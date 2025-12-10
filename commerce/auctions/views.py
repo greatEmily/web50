@@ -12,6 +12,14 @@ from django.db.models import Prefetch
 
 from .models import User, AuctionListing, Bid, Comment
 
+CATEGORY_CHOICES = [
+    ('Fashion', 'Fashion'),
+    ('Toys', 'Toys'),
+    ('Electronics', 'Electronics'),
+    ('Home', 'Home'),
+    ('Other', 'Other'),
+]
+
 @login_required(login_url='login')
 def index(request):
     listings = AuctionListing.objects.filter(active=True).order_by('-created_at')
@@ -200,3 +208,18 @@ def my_listings(request):
     listings = AuctionListing.objects.filter(owner=request.user).order_by('-created_at')
     return render(request, 'auctions/my_listings.html', {'listings': listings})
 
+
+@login_required
+def category_list(request):
+    categories = [c[0] for c in CATEGORY_CHOICES]  # Extract names
+    return render(request, 'auctions/category_list.html', {'categories': categories})
+
+@login_required
+def category_detail(request, category):
+    if category not in dict(CATEGORY_CHOICES):
+        return HttpResponseRedirect(reverse('category_list'))  # or raise 404
+    listings = AuctionListing.objects.filter(category=category, active=True)
+    return render(request, 'auctions/category_detail.html', {
+        'category': category,
+        'listings': listings
+    })
