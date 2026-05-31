@@ -1,0 +1,50 @@
+{% extends "network/layout.html" %}
+{% load tz %}
+
+{% block body %}
+
+<h2>Following</h2>
+
+{% for post in page_obj %}
+<div class="card mb-3">
+    <div class="card-body">
+
+        <a href="{% url 'profile' post.user.username %}">
+            <strong>{{ post.user.username }}</strong>
+        </a>
+
+        <p id="post-content-{{ post.id }}" class="mt-2">{{ post.content }}</p>
+
+        <small class="text-muted">{{ post.timestamp|localtime|date:"M d, Y h:i A" }}</small>
+
+        {% if user.is_authenticated and user == post.user %}
+            <button class="btn btn-sm btn-outline-secondary mt-2"
+                    onclick="editPost('{{ post.id }}')">
+                Edit
+            </button>
+        {% endif %}
+
+        <div class="mt-2">
+            <button class="btn btn-sm btn-outline-danger mt-2"
+                    onclick="toggleLike('{{ post.id }}')">
+                ❤️ <span id="like-count-{{ post.id }}">{{ post.likes.count }}</span>
+            </button>
+        </div>
+
+    </div>
+</div>
+{% empty %}
+<p>You aren’t following anyone yet.</p>
+{% endfor %}
+
+<div class="pagination">
+    {% if page_obj.has_previous %}
+        <a class="btn btn-outline-primary" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+    {% endif %}
+
+    {% if page_obj.has_next %}
+        <a class="btn btn-outline-primary" href="?page={{ page_obj.next_page_number }}">Next</a>
+    {% endif %}
+</div>
+
+{% endblock %}
