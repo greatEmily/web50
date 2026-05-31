@@ -1,0 +1,71 @@
+{% extends "network/layout.html" %}
+{% load tz %}
+
+{% block body %}
+
+<h2>{{ user_profile.username }}</h2>
+
+<p><strong>Followers:</strong> {{ followers_count }}</p>
+<p><strong>Following:</strong> {{ following_count }}</p>
+
+{% if user.is_authenticated and user != user_profile %}
+<form action="{% url 'follow_toggle' user_profile.username %}" method="POST">
+    {% csrf_token %}
+    {% if is_following %}
+        <button class="btn btn-danger">Unfollow</button>
+    {% else %}
+        <button class="btn btn-primary">Follow</button>
+    {% endif %}
+</form>
+{% endif %}
+
+<hr>
+
+<h3>Posts</h3>
+
+{% for post in page_obj %}
+<div class="card mb-3">
+    <div class="card-body">
+
+        <!-- Post content -->
+        <p id="post-content-{{ post.id }}">{{ post.content }}</p>
+        <small class="text-muted">{{ post.timestamp|localtime|date:"M d, Y h:i A" }}</small>
+
+        <!-- Edit button (only for owner) -->
+        {% if user.is_authenticated and user == post.user %}
+            <button class="btn btn-sm btn-outline-secondary mt-2"
+                    onclick="editPost('{{ post.id }}')">
+                Edit
+            </button>
+        {% endif %}
+
+        <!-- Like button -->
+        {% if user.is_authenticated %}
+            <button class="btn btn-sm btn-outline-danger mt-2"
+                    onclick="toggleLike('{{ post.id }}')">
+                ❤️ <span id="like-count-{{ post.id }}">{{ post.likes.count }}</span>
+            </button>
+        {% else %}
+            <div class="mt-2">
+                ❤️ {{ post.likes.count }}
+            </div>
+        {% endif %}
+
+    </div>
+</div>
+{% empty %}
+<p>No posts yet.</p>
+{% endfor %}
+
+<!-- Pagination -->
+<div class="pagination">
+    {% if page_obj.has_previous %}
+        <a class="btn btn-outline-primary" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+    {% endif %}
+
+    {% if page_obj.has_next %}
+        <a class="btn btn-outline-primary" href="?page={{ page_obj.next_page_number }}">Next</a>
+    {% endif %}
+</div>
+
+{% endblock %}

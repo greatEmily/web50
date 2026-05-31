@@ -1,0 +1,220 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>{% block title %}Social Network{% endblock %}</title>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+        <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+    body, h2, h3, h5 {
+        font-family: "Cormorant Garamond", serif;
+    }
+
+    body {
+        background: #f7f3e9; /* parchment */
+        font-family: "Garamond", "Georgia", serif;
+        color: #3b2f2f;
+        background-image: url("https://www.transparenttextures.com/patterns/aged-paper.png");
+    }
+
+    nav.navbar {
+        background: linear-gradient(90deg, #3b2f2f, #5a4636);
+        border-bottom: 3px solid #d4b483;
+    }
+
+    nav.navbar a.nav-link, 
+    nav.navbar .navbar-brand {
+        color: #f7f3e9 !important;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+
+    nav.navbar a.nav-link:hover {
+        color: #d4b483 !important;
+    }
+
+    .card {
+        background: #fffdf7;
+        border: 1px solid #d4b483;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        border-radius: 8px;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    h2, h3, h5 {
+        font-family: "Garamond", "Georgia", serif;
+        color: #3b2f2f;
+        text-shadow: 0 1px 0 #fff;
+    }
+
+    button.btn-primary {
+        background-color: #8b6f47;
+        border-color: #8b6f47;
+    }
+
+    button.btn-primary:hover {
+        background-color: #6f5636;
+        border-color: #6f5636;
+    }
+
+    button.btn-outline-secondary {
+        border-color: #8b6f47;
+        color: #8b6f47;
+    }
+
+    button.btn-outline-secondary:hover {
+        background-color: #8b6f47;
+        color: #fff;
+    }
+
+    button.btn-outline-danger {
+        border-color: #b85c5c;
+        color: #b85c5c;
+    }
+
+    button.btn-outline-danger:hover {
+        background-color: #b85c5c;
+        color: #fff;
+    }
+
+    .pagination a {
+        border-color: #8b6f47;
+        color: #8b6f47;
+    }
+
+    .pagination a:hover {
+        background-color: #8b6f47;
+        color: #fff;
+    }
+
+    /* Fancy dividers */
+    hr {
+        border: 0;
+        height: 2px;
+        background: linear-gradient(to right, transparent, #8b6f47, transparent);
+        margin: 2rem 0;
+    }
+</style>
+
+        <link href="{% static 'network/styles.css' %}" rel="stylesheet">
+    </head>
+
+    <script>
+function editPost(postId) {
+    const contentElement = document.getElementById(`post-content-${postId}`);
+    const originalContent = contentElement.innerText;
+
+    // Replace content with textarea
+    contentElement.innerHTML = `
+        <textarea id="edit-textarea-${postId}" class="form-control">${originalContent}</textarea>
+        <button class="btn btn-primary btn-sm mt-2" onclick="savePost(${postId})">Save</button>
+    `;
+}
+
+function savePost(postId) {
+    const newContent = document.getElementById(`edit-textarea-${postId}`).value;
+
+    fetch(`/edit/${postId}/`, {
+        method: "PUT",
+        headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+        },
+        body: JSON.stringify({
+            content: newContent
+        })
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.error) {
+            alert(result.error);
+            return;
+        }
+
+        // Replace textarea with updated content
+        const contentElement = document.getElementById(`post-content-${postId}`);
+        contentElement.innerHTML = newContent;
+    });
+}
+
+// CSRF helper
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+        const cookies = document.cookie.split(";");
+        for (let cookie of cookies) {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + "=")) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function toggleLike(postId) {
+    fetch(`/like/${postId}/`, {
+        method: "PUT",
+        headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+        }
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.error) {
+            alert(result.error);
+            return;
+        }
+
+        // Update like count
+        document.getElementById(`like-count-${postId}`).innerText = result.like_count;
+    });
+}
+</script>
+
+    <body>
+
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <a class="navbar-brand" href="#">Network</a>
+          
+            <div>
+              <ul class="navbar-nav mr-auto">
+                {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'profile' user.username %}"><strong>{{ user.username }}</strong></a>
+                    </li>
+                {% endif %}
+                <li class="nav-item">
+                  <a class="nav-link" href="{% url 'index' %}">All Posts</a>
+                </li>
+                {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'following' %}">Following</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'logout' %}">Log Out</a>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'login' %}">Log In</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'register' %}">Register</a>
+                    </li>
+                {% endif %}
+              </ul>
+            </div>
+          </nav>
+        
+        <div class="body">
+            {% block body %}
+            {% endblock %}
+        </div>
+    </body>
+</html>
+
